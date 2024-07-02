@@ -322,7 +322,7 @@ def hough_lines(edges, image, threshold=230):
     return left_lines, right_lines
 
 
-def lines_intersect(a, b, a2, b2):
+def line_intersection(a, b, a2, b2):
     if a == a2:
         print("These lines are parallel.")
         return None
@@ -383,7 +383,7 @@ def find_intersections(
                 np.abs(np.rad2deg(theta_left) - np.rad2deg(theta_right))
                 > intersection_degree_threshold
             ):
-                intersections.append(lines_intersect(a_left, b_left, a_right, b_right))
+                intersections.append(line_intersection(a_left, b_left, a_right, b_right))
     return intersections
 
 
