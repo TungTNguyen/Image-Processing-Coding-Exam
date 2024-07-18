@@ -74,8 +74,8 @@ def conv_vectorized(image, kernel):
     # For this project assignment, I will use edge values to pad the images.
     # Zero padding will make derivatives at the image boundary very big,
     # whereas I want to ignore the edges at the boundary.
-    pad_width0 = Hk // 2
-    pad_width1 = Wk // 2
+    pad_width0 = (Hk - 1) // 2
+    pad_width1 = (Wk - 1) // 2
     pad_width = ((pad_width0, pad_width0), (pad_width1, pad_width1))
     padded = np.pad(image, pad_width, mode="edge")
 
@@ -84,17 +84,16 @@ def conv_vectorized(image, kernel):
 
     # Creating indices of the image patch:
     H_padded, W_padded = padded.shape
-    h0 = np.repeat(np.arange(H_padded - Hk + 1), W_padded - Wk + 1).reshape(-1, 1)
-    h1 = np.arange(Hk).reshape(1, Hk)
-    h_padded = np.repeat(h0 + h1, Wk, axis=1)
-
-    w0 = np.tile(np.arange(Wk), Hk).reshape(1, -1)
-    w1 = np.arange(W_padded - Wk + 1).reshape(-1, 1)
-    w_padded = np.tile(w0 + w1, [H_padded - Hk + 1, 1])
-
-    y = padded[h_padded, w_padded].dot(kernel.reshape(-1, 1))
-    out = y.reshape(H_padded - Hk + 1, W_padded - Wk + 1)
-
+    vect_kernel = kernel.reshape(-1, 1)
+    patch = padded[:, :]
+    W_row_indices = np.tile(np.arange(Wk), Hk).reshape(1, -1)
+    W_col_indices = np.arange(Wi).reshape(-1, 1)
+    W_mat_indices = np.tile(W_row_indices + W_col_indices, (Hi, 1))
+    H_row_indices = np.arange(Hk).reshape(1, -1)
+    H_col_indices = np.repeat(np.arange(Hi), Wi).reshape(-1, 1)
+    H_mat_indices = np.repeat(H_col_indices + H_row_indices, Wk, axis=1)
+    mat_patch = patch[H_mat_indices, W_mat_indices]
+    out[:, :] += mat_patch.dot(vect_kernel).reshape(Hi, Wi)
     return out
 
 
@@ -154,7 +153,7 @@ def sobel_edge_detector(image, threshold=100):
 
     This function finds all edges in the given image.
 
-    This implementation is based purely on numpy. It works without any dependency, even scipy, 
+    This implementation is based purely on numpy. It works without any dependency, even scipy,
     and is optimized for speed.
     """
 
@@ -361,7 +360,7 @@ def display_image(im_data, xs_left, ys_left, xs_right, ys_right, vanishing_point
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-    cv2.imwrite("Road_Image_vanishing_point.jpg", image)
+    # cv2.imwrite("Road_Image_vanishing_point.jpg", image)
 
 
 def find_intersections(
@@ -383,7 +382,9 @@ def find_intersections(
                 np.abs(np.rad2deg(theta_left) - np.rad2deg(theta_right))
                 > intersection_degree_threshold
             ):
-                intersections.append(line_intersection(a_left, b_left, a_right, b_right))
+                intersections.append(
+                    line_intersection(a_left, b_left, a_right, b_right)
+                )
     return intersections
 
 
